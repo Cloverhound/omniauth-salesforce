@@ -23,6 +23,9 @@ module OmniAuth
         :login_hint
       ]
 
+      # OmniAuth 2.0 requires this
+      option :pkce, true
+
       def request_phase
         req = Rack::Request.new(@env)
         options.update(req.params)
@@ -32,6 +35,14 @@ module OmniAuth
           options[:display] = mobile_request ? 'touch' : 'page'
         end
         super
+      end
+
+      def callback_phase
+        if request.params["error"] || request.params["error_reason"]
+          fail!(request.params["error"] || request.params["error_reason"], CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
+        else
+          super
+        end
       end
 
       def auth_hash
